@@ -148,6 +148,12 @@ variable "deletion_protection_enabled" {
   description = "A bool flag to enable/disable deletion protection for ALB"
 }
 
+variable "http_ingress_port" {
+  type        = number
+  default     = 80
+  description = "A number that defines the port for connections through the ALB"
+}
+
 # variable "deregistration_delay" {
 #   type        = number
 #   default     = 15
@@ -242,11 +248,11 @@ resource "aws_security_group_rule" "egress" {
 }
 
 resource "aws_security_group_rule" "alb_http_ingress" {
-  count = var.create && var.http_redirect_enabled ? 1 : 0
+  count = var.create ? 1 : 0
 
   type              = "ingress"
-  from_port         = 80
-  to_port           = 80
+  from_port         = var.http_ingress_port
+  to_port           = var.http_ingress_port
   protocol          = "tcp"
   cidr_blocks       = var.http_ingress_cidr_blocks
   prefix_list_ids   = var.http_ingress_prefix_list_ids
@@ -335,17 +341,29 @@ resource "aws_lb_target_group" "alb" {
 }
 
 resource "aws_lb_listener" "http" {
-  count = var.create && var.http_redirect_enabled ? 1 : 0
+  count = var.create ? 1 : 0
 
   load_balancer_arn = aws_lb.alb[0].arn
-  port              = 80
+  port              = var.http_ingress_port
   protocol          = "HTTP"
-  default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+
+  dynamic "default_action" {
+    for_each = var.http_redirect_enabled ? [1] : []
+    content {
+      type = "redirect"
+      redirect {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  }
+
+  dynamic "default_action" {
+    for_each = var.http_redirect_enabled ? [] : [1]
+    content {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.alb[0].arn
     }
   }
 }

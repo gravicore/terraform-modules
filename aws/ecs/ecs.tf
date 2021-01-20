@@ -13,6 +13,12 @@ variable "alb_target_group_arn" {
   default     = ""
 }
 
+variable "container_cluster_name" {
+  description = "The name of the Cluster to launch in"
+  type        = string
+  default     = ""
+}
+
 variable "container_subnet_ids" {
   description = "A list of private VPC Subnet IDs to launch in"
   type        = list(string)
@@ -117,7 +123,7 @@ variable "container_definitions" {
 
 resource "aws_ecs_cluster" "default" {
   count = var.create ? 1 : 0
-  name  = local.module_prefix
+  name  = var.container_cluster_name == "" ? local.module_prefix : var.container_cluster_name
   tags  = local.tags
 }
 
