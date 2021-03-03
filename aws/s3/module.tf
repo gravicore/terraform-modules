@@ -1,13 +1,5 @@
-
 terraform {
-  required_version = "~> 0.12.0"
-
-  required_providers {
-    aws      = "~> 2.0"
-    template = "~> 2.0"
-    local    = "~> 1.2"
-    null     = "~> 2.0"
-  }
+  required_version = "~> 0.12"
 }
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -16,13 +8,13 @@ terraform {
 
 variable "name" {
   type        = string
-  default     = "camunda"
+  default     = "s3"
   description = "The name of the module"
 }
 
 variable terraform_module {
   type        = string
-  default     = "gravicore/terraform-gravicore-modules/aws/ecs"
+  default     = "gravicore/terraform-gravicore-modules/aws/s3"
   description = "The owner and name of the Terraform module"
 }
 

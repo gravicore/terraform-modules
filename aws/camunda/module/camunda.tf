@@ -25,6 +25,7 @@ variable "camunda_cognito_client_id" {
 variable "camunda_cognito_redirect_uri" {
   description = "The Cognito user pool to check users"
   type        = string
+  default     = ""
 }
 
 variable "camunda_cognito_domain" {
@@ -40,11 +41,13 @@ variable "camunda_cognito_user_pool_id" {
 variable "camunda_cognito_signout_uri" {
   description = "The Cognito user pool to check users"
   type        = string
+  default     = ""
 }
 
 variable "camunda_cognito_sso_signout_uri" {
   description = "The Cognito user pool to check users"
   type        = string
+  default     = ""
 }
 
 variable "camunda_subnet_ids" {
@@ -450,7 +453,7 @@ module "container" {
 }
 
 module "alb" {
-  source = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/alb?ref=GRVDEV-147-create-terraform-ecs-module"
+  source = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/alb?ref=0.31.0"
 
   create                    = var.create
   vpc_id                    = var.vpc_id
@@ -474,7 +477,7 @@ module "alb" {
 }
 
 module "datadog" {
-  source                         = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/datadog/ecs?ref=GRVDEV-147-create-terraform-ecs-module"
+  source                         = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/datadog/ecs?ref=0.31.0"
   container_datadog_api_key      = var.datadog_api_key
   container_datadog_service_name = var.name
   name                           = var.name
@@ -485,7 +488,7 @@ module "datadog" {
 }
 
 module "ecs" {
-  source      = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/ecs?ref=GRVDEV-147-create-terraform-ecs-module"
+  source      = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/ecs?ref=0.31.0"
   name        = var.name
   namespace   = var.namespace
   environment = var.environment
@@ -512,4 +515,26 @@ module "ecs" {
     module.datadog.datadog_container_metrics_definition
   ]) : jsonencode([module.container.json_map_object, ])
 
+}
+
+resource "aws_ssm_parameter" "access_app_uri" {
+  count       = var.create ? 1 : 0
+  name        = "/${local.stage_prefix}/${var.name}-access-app-uri"
+  description = format("%s %s", var.desc_prefix, "The WebApp URI for this Camunda instance")
+
+  type      = "String"
+  value     = "https://${module.alb.route53_dns_name}/camunda/app/welcome/default/#!/welcome"
+  overwrite = true
+  tags      = local.tags
+}
+
+resource "aws_ssm_parameter" "access_api_uri" {
+  count       = var.create ? 1 : 0
+  name        = "/${local.stage_prefix}/${var.name}-access-api-uri"
+  description = format("%s %s", var.desc_prefix, "The API URI for this Camunda instance")
+
+  type      = "String"
+  value     = "https://${module.alb.route53_dns_name}/engine-rest/engine"
+  overwrite = true
+  tags      = local.tags
 }
