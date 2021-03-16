@@ -19,6 +19,12 @@ variable "container_cluster_name" {
   default     = ""
 }
 
+variable "container_platform_version" {
+  description = "The name of the Cluster to launch in"
+  type        = string
+  default     = "1.3.0"
+}
+
 variable "container_subnet_ids" {
   description = "A list of private VPC Subnet IDs to launch in"
   type        = list(string)
@@ -141,12 +147,13 @@ resource "aws_ecs_task_definition" "default" {
 }
 
 resource "aws_ecs_service" "default" {
-  count           = var.create ? 1 : 0
-  name            = local.module_prefix
-  cluster         = aws_ecs_cluster.default[0].id
-  task_definition = aws_ecs_task_definition.default[0].arn
-  desired_count   = var.container_desired_count
-  launch_type     = "FARGATE"
+  count            = var.create ? 1 : 0
+  name             = local.module_prefix
+  cluster          = aws_ecs_cluster.default[0].id
+  task_definition  = aws_ecs_task_definition.default[0].arn
+  desired_count    = var.container_desired_count
+  launch_type      = "FARGATE"
+  platform_version = var.container_platform_version
 
   network_configuration {
     security_groups = [var.container_security_group_id]
