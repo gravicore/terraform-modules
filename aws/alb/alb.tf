@@ -90,6 +90,12 @@ variable "https_ingress_prefix_list_ids" {
   description = "List of prefix list IDs for allowing access to HTTPS ingress security group"
 }
 
+variable "http_ingress_port" {
+  type        = string
+  default     = 80
+  description = "Port used by the ALB to receive connections"
+}
+
 variable "https_ssl_policy" {
   description = "The name of the SSL Policy for the listener."
   default     = "ELBSecurityPolicy-2015-05"
@@ -146,12 +152,6 @@ variable "deletion_protection_enabled" {
   type        = bool
   default     = false
   description = "A bool flag to enable/disable deletion protection for ALB"
-}
-
-variable "http_ingress_port" {
-  type        = number
-  default     = 80
-  description = "A number that defines the port for connections through the ALB"
 }
 
 # variable "deregistration_delay" {
@@ -248,7 +248,7 @@ resource "aws_security_group_rule" "egress" {
 }
 
 resource "aws_security_group_rule" "alb_http_ingress" {
-  count = var.create ? 1 : 0
+  count = var.create && length(var.http_ingress_cidr_blocks) > 0 ? 1 : 0
 
   type              = "ingress"
   from_port         = var.http_ingress_port
@@ -346,7 +346,6 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.alb[0].arn
   port              = var.http_ingress_port
   protocol          = "HTTP"
-
   dynamic "default_action" {
     for_each = var.http_redirect_enabled ? [1] : []
     content {

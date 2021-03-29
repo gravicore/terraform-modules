@@ -7,10 +7,10 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "alb_target_group_arn" {
-  type        = string
-  description = "The ARN of the ALB target group"
-  default     = ""
+variable "alb_target_group_arns" {
+  type        = list(string)
+  description = "The ARNs of the ALB target groups"
+  default     = []
 }
 
 variable "container_cluster_name" {
@@ -161,9 +161,9 @@ resource "aws_ecs_service" "default" {
   }
 
   dynamic "load_balancer" {
-    for_each = var.alb_target_group_arn == "" ? [] : [1]
+    for_each = var.alb_target_group_arns
     content {
-      target_group_arn = var.alb_target_group_arn
+      target_group_arn = load_balancer.value
       container_name   = local.module_prefix
       container_port   = var.container_port
     }
